@@ -1,4 +1,4 @@
-# IntroDataScience
+# Data practical - **Causes of deaths by age in Switzerland**
 
 Hi ! This is the data practical speaking.
 
