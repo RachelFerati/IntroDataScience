@@ -1,4 +1,4 @@
-# Data practical - **Causes of deaths by age in Switzerland**
+# Data practical - **Causes of death by age in Switzerland**
 
 Hi ! This is the data practical speaking.
 
