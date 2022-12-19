@@ -1,0 +1,212 @@
+---
+title: "Causes of death by age in Switzerland"
+author: "Rachel Ferati"
+date: "2022-12-14"
+output:
+  github_document:
+      toc: true
+---
+
+This report uses the R programming language and the following R libraries :
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(treemap)
+library(hrbrthemes)
+```
+
+![](Deathfamily.jpeg)
+
+# Introduction
+
+*How Am I going to die* ? We all one day ask ourselves this question. And, of course, this question is often followed by *When Am I going to die ?* Although these questions cannot be answered, it is important to identify the number of deaths and their causes to have a better understanding of the situation in a country.
+
+> > > An important input to national and international health decision-making and planning processes is a consistent and comparative analysis of the causes of death across different population groups (Mathers, C.B. et al, 2009)
+
+Indeed, the causes of death differ from one country to another, and also from one person to another. It depends on many factors, i.e., the social-economic environment, the age, the family, etc. It is important for a family to know which disease occurs within the family, and it is important for a country to know which are the causes of death of the population. To know that, there are a lot of database that exist for many countries. The one from which we extracted the data needed for our essay comes from the [World Health Organization](@https://www.who.int/data/gho/data/themes/mortality-and-global-health-estimates/ghe-leading-causes-of-death).
+
+> > > Over the last decade, the WHO has intensified efforts to support the collection of vital registration information and other mortality data in developing countries (Mathers, C.B. et al,2009)
+
+## Research question
+
+In this essay, we will be interested in the differences between the three leading causes of death across ages, and more precisely between children and adults. We will less focused on the number of death in itself, since it is not surprising that more people died when they get older, but rather on the type of causes, whether it is communicable, meaning that it is transmitted to one another (genetic illnesses), non-communicable, and injuries, meaning the causes that comes from the external world (car accident), or from ourselves (self-harm). Our data set will concern only Switzerland's population in 2019. The difference between this country and the others, for example those who are not considered as WEIRD[^1] countries, as well as the difference between 2019 and other years, could be the subject of another scientific report.
+
+[^1]: Western, educated, industrialized, rich and democratic
+
+Our research question is the following : **Is there a difference in the type of deaths between children and adults ?**
+
+## Hypothesis
+
+-   H0 : there is no differences in the type of death between children and adults in Switzerland in 2019
+
+-   H1 : There is a differences in the type of death between children and adults in Switzerland in 2019
+
+## Predictions and definition
+
+Our prediction is that young-adults and adults die mostly from injuries, compared to children, who die mostly from non-communicable and communicable diseases.
+
+**Children**
+
+:   Between 0 and 14 years-old
+
+**Young-adults**
+
+:   Between 15 and 24 years-old
+
+**Adults**
+
+:   Between 25 and 85+ years-old
+
+## Dataset
+
+The dataset for this scientific report comes from the following file :
+
+```{r, message=FALSE, warning=FALSE}
+library(readxl)
+Deathstat <- read_excel("~/UNINE/UniNE/Master en Sciences cognitives/Data science/Data - Scientific report/Final Scientific report/Deathstat.xlsx")
+```
+
+Here is a view of the variables used in this scientific report :
+
+```{r, message=FALSE, warning=FALSE}
+Deathstat$Category <- as.factor(Deathstat$Category)
+Deathstat$Rank <- as.factor(Deathstat$Rank)
+
+str(Deathstat)
+```
+
+# The three main causes of death in Switzerland in 2019
+
+The WHO database, in addition to having identified the different causes of death by age category, has also made a summary of the three main causes of death, all ages combined (0-85+ years-old).
+
+In this graph, we can have an overview of the three main causes of death among all ages in Switzerland in 2019 :
+
+```{r, message=FALSE, warning=FALSE}
+DeathAll <-Deathstat[1:3,]
+
+ggplot(DeathAll, aes(x=fct_reorder(Cause, Nb), y=Nb, fill=Category,width = 0.5)) +
+  geom_bar(stat = "identity") +
+  xlab("Causes of death") + 
+  ylab("Number of death per 100'000 people (0-85+)") +
+  coord_flip() +
+  scale_fill_manual(values = c("Lightblue"))
+```
+
+We can see that the three most common death for all groups are ischaemic heart disease (cause n°1), Alzheimer disease and other dementia (cause n°2), and stroke (cause n°3). All of these causes are considered "non-communicable".
+
+What is this telling us ? By seeing this graph, we could think that there is only one category of death in Switzerland in 2019, which is "non-communicable". To have a better view of the results, we have to take a look at the number of death per 100'000 people between ages :
+
+```{r, message=FALSE, warning=FALSE}
+DeathADCH <- Deathstat[4:60,]
+
+ggplot(DeathADCH, aes(x=fct_relevel(Age, c("5-9"), after = 2), y=Nb)) +
+  geom_point(color="Lightpink", size=4, alpha=0.6) + 
+  geom_segment(aes(x=Age, xend=Age, y=0, yend=Nb)) +
+  theme_light() +
+  coord_flip() +
+  xlab("Age groups") +
+  ylab("Number of death per 100'000 people (0-85+)") +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank())
+```
+
+What we can see is that the number of death per 100'000 people is quite high for children between 0 and 1 years-old, compared to people between 1 and 49 years-old. Then, the number increases from 50 years-old and reach the highest for the 85 years-old and more.
+
+That explains why the three main causes of death across all ages in Switzerland in 2019 is composed only of non-communicable diseases. This is because there is a significant difference between the number of death of the 50 and 85+ years-old adults compared to the rest of the population.
+
+### Statistical tests
+
+To have a better understanding of this phenomenon, we run an ANOVA test to see if the effect of age on the number of death is significant :
+
+```{r}
+TestLM <- lm(Nb~Age, data = DeathADCH)
+summary(TestLM)
+
+anova(TestLM)
+```
+
+The results show that the effect of age on the number of death is significant (F-statistic = 13.64, df = 18, 38), p-value <.001).
+
+# Causes of deaths among children and young-adults (0-24 years-old)
+
+To have a better view on the subject and to see if our hypothesis is supported or not, we will now have a look at the three main causes of death among children and young adults.
+
+Here is a graph that presents the type of death that can be find among children and young-adults between 0 and 24 years-old.
+
+This graph seems to confirm that children die mostly from communicable and non-communicable diseases.
+
+```{r, message=FALSE, warning=FALSE}
+DeathInfant <-Deathstat[4:21,]
+
+ggplot(DeathInfant, aes(x=Cause, y=Nb, fill=Category, width = 0.5)) +
+  geom_bar(stat = "identity") +
+  xlab("Causes of death") + 
+  ylab("Number of death per 100'000 people (0-24)") +
+  facet_wrap(~ Category) +
+  theme(axis.text.x = element_text(color="Black", 
+                           size=7, angle=90)) +
+  scale_fill_manual(values = c("Lightpink", "Orange", "Lightblue"))
+
+```
+
+However, as we saw in the previous graph, there are more deaths between 0 and 1 years-old, compared to children and young-adults between 1 and 24 years-old.
+
+To see if our hypothesis is supported, we have to look more precisely the causes of death between 1 and 24 years-old.
+
+## Causes of deaths among children and young-adults (1-24 years-old)
+
+```{r, message=FALSE, warning=FALSE}
+DeathChild <- Deathstat[7:21,]
+
+ggplot(DeathChild, aes(x=fct_relevel(Age, c("5-9"), after = 1), y=Nb, fill=Category, width=c(0.2))) +
+  geom_bar(stat = "identity") +
+  xlab("Age groups") + 
+  ylab("Number of death per 100'000 people (1-24)") +
+  scale_fill_manual(values = c("Orange", "Lightblue"))
+
+```
+
+What we see in this graph confirms our hypothesis that there is a difference in the type of death between children and adults. To be more precise, it seems that children between 0 and 14 years-old die mostly from non-communicable diseases. What we can also see is that from the age of 15 years-old, the first cause of death is injuries (Self-harm).
+
+This follows our prediction that children (0-14 years-old) die mostly from communicable and non-communicable disease, and young-adults die mostly from injuries. To see if our hypothesis is confirmed, we also have to see the difference with the causes of death among adults.
+
+# Causes of deaths among adults (25-85+ years-old)
+
+As we saw earlier, there is an increase in the number of death between 70 ans 85+ years-old. We also saw that the main type of death for older people is "non-communicable". To see in more details the causes of death among adults, we decided to take only the data for adults between 25 and 69 years-old.
+
+```{r}
+DeathAdult2 <- Deathstat[22:48,]
+
+ggplot(DeathAdult2, aes(x=Age, y=Nb, fill=Category, width=c(0.1))) +
+  geom_bar(stat = "identity") +
+  xlab("Age groups (25-69)") + 
+  ylab("Number of death per 100'000 people") +
+  scale_fill_manual(values = c("Orange", "Lightblue"))
+```
+
+What this graph tells us is that the main type of death among adults between 25 and 44 years-old is injuries, compared to adult between 50 and 60 years-old.
+
+This confirmed our hypothesis that there is a difference in the type of death between children (non-communicable) and adults (injuries).
+
+# Conclusion
+
+We saw in this short study that children between 0 and 14 years-old die mostly from communicable and non-communicable diseases, young-adults and adults between 14 and 49 die mostly from injuries, and that adults between 50 and 85+ years-old die mostly from non-communicable diseases.
+
+Our hypothesis is therefore confirmed, that there is a difference between types of death between children and adults. However, our predictions could have been more precise. Indeed, we saw in the graphs that adults from 50 and 85+ years-old die mostly from non-communicable diseases, compare to adults between 25 and 49 years-old.
+
+Finally, it could be interesting, for future studies, to be interested at the differences between Switzerland and other countries.
+
+# References
+
+Mathers, C. D., Boerma, T., & Ma Fat, D. (2009). Global and regional causes of death. British medical bulletin, 92(1), 7-32.
+
+R Core Team. 2021. R: A Language and Environment for Statistical Computing. Vienna, Austria: R Foundation for Statistical Computing. https://www.R-project.org/.
+
+World Health Organization, find in : https://www.who.int/data/gho/data/themes/mortality-and-global-health-estimates/ghe-leading-causes-of-death)
+
+
